@@ -1,1 +1,1 @@
-{"pair_id":"v14517","sprint_id":"v14517","phase":"running","started_at":"2026-07-15T03:00:00Z","pid":"530402","operator":"cursor-ai","personas":["code-reviewer","ops-engineer","sre","release-manager"]}
+{"schema_version":1,"pair_id":"v14517","phase":"closed","closed_at":"2026-07-15T03:30:00Z","operator":"cursor-ai"}
