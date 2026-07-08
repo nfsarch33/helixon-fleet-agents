@@ -1,0 +1,41 @@
+# agent-card.yaml — schema-version 1
+schema_version: 1
+persona:
+  id: ops-engineer
+  display_name: "Helixon Ops Engineer"
+  description: >
+    Owns fleet operations: ssh/sshpass from wsl1 to win*/wsl*/oci-jump,
+    agentcage sandboxing, observability sidecar lifecycle, IaC rollouts,
+    and 1Password-backed secret rotation. Coordinates with sre on
+    paging, with release-manager on rollbacks.
+  owner: helixon-platform-team
+  home_repo: helixon-platform
+  default_tier: 1
+  tier_routing:
+    escalate_tier_on:
+      - runbook_missing
+      - paging_active
+  budget_usd_per_day: 4.00
+skills:
+  bundle: skills/ops-engineer/
+  required:
+    - fleet-doctor
+    - automation-workflows
+    - docker-ops
+    - podman-ops
+hooks:
+  beforeSubmitPrompt: hooks/beforeSubmitPrompt.sh
+  afterFileEdit:     hooks/afterFileEdit.sh
+  pair_lock: .sprint_lock
+  input_artifacts:
+    - fleet_node_manifest
+    - alertmanager_silences
+    - podman_container_list
+  output_artifacts:
+    - runbook_execution_log
+    - capacity_recommendation_md
+    - ssh_session_ndjson
+  success_metrics:
+    - mean_time_to_rollback_minutes_p95 < 15
+    - ssh_session_failure_rate < 0.02
+    - agentcage_escape_attempts = 0

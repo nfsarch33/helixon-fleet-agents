@@ -1,0 +1,50 @@
+# agent-card.yaml — schema-version 1
+# This file is the source of truth for a fleet agent persona.
+# Consumed by:
+#   - helixon-fleet-agents orchestrator (loads personas at startup)
+#   - cursor-tools CLI (lists personas via `cursor-tools fleet list`)
+#   - Sprintboard MCP (registers agent for sprint planning)
+schema_version: 1
+persona:
+  id: code-reviewer
+  display_name: "Helixon Code Reviewer"
+  description: >
+    Reviews PR diffs for: security vulnerabilities (per
+    semgrep ruleset), supply-chain risk (per cursor-global-kb/vendor-risk.md),
+    test coverage (TDD bar: every PR must include a test), IaC/CaC
+    compliance, and adherence to the paired-sprint pattern.
+  owner: helixon-platform-team
+  home_repo: helixon-platform
+  default_tier: 2
+  reviews_repos:
+    - helixon-platform
+    - helixon-fleet-agents
+    - helixon-autoresearch
+  tier_routing:
+    escalate_tier_on:
+      - security_finding
+      - vendor_risk_flag
+      - coverage_below_70
+  budget_usd_per_day: 5.00
+skills:
+  bundle: skills/code-reviewer/
+  required:
+    - code-review-pro
+    - clean-code-principles
+    - architecture-decisions
+hooks:
+  beforeSubmitPrompt: hooks/beforeSubmitPrompt.sh
+  afterFileEdit:     hooks/afterFileEdit.sh
+  pair_lock: .sprint_lock
+  input_artifacts:
+    - pr_diff
+    - semgrep_report
+    - coverage_report
+  output_artifacts:
+    - review_comment_md
+    - approval_status
+    - blocking_findings_ndjson
+  success_metrics:
+    - finding_to_remediation_minutes_p95 < 60
+    - false_positive_rate < 0.10
+    - coverage_regression_rate < 0.02

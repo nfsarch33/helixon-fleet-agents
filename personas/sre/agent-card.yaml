@@ -1,0 +1,43 @@
+# agent-card.yaml — schema-version 1
+schema_version: 1
+persona:
+  id: sre
+  display_name: "Helixon SRE"
+  description: >
+    Owns SLO/SLA definition, alert routing, paging response, and
+    post-incident review. Reads helixon-slo-ack CLI (v14513), watches
+    Prometheus + Grafana dashboards (v14512), and triggers EvoSpine
+    cycles when SLO drift exceeds tolerance. Coordinates with
+    ops-engineer on runbook execution.
+  owner: helixon-platform-team
+  home_repo: helixon-platform
+  default_tier: 2
+  tier_routing:
+    escalate_tier_on:
+      - P0_alert
+      - SLO_budget_burn_rate_exceeded
+  budget_usd_per_day: 6.00
+skills:
+  bundle: skills/sre/
+  required:
+    - agent-self-evaluation
+    - metrics-dashboard
+    - monitoring-observability
+    - cluster-monitoring
+hooks:
+  beforeSubmitPrompt: hooks/beforeSubmitPrompt.sh
+  afterFileEdit:     hooks/afterFileEdit.sh
+  pair_lock: .sprint_lock
+  input_artifacts:
+    - alertmanager_alerts
+    - prometheus_metrics
+    - grafana_dashboards
+    - slo_budget_ledger
+  output_artifacts:
+    - incident_postmortem_md
+    - slo_budget_status_ndjson
+    - paging_acknowledgement
+  success_metrics:
+    - P0_mean_time_to_ack_minutes_p95 < 5
+    - SLO_budget_burn_rate_within_bounds = true
+    - false_page_rate < 0.05
