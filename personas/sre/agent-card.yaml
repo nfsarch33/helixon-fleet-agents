@@ -17,6 +17,8 @@ persona:
       - P0_alert
       - SLO_budget_burn_rate_exceeded
   budget_usd_per_day: 6.00
+  tenant_id: shared-fleet
+  tenant_isolation: per-persona-context
 skills:
   bundle: skills/sre/
   required:

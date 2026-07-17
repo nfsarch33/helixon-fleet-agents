@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "metrics": {
+    "quality": 3000,
+    "modularity": 1,
+    "acyclicity": 1,
+    "depth": 0,
+    "equality": 0,
+    "redundancy": 0
+  },
+  "saved_at": "2026-07-17T11:50:00+10:00",
+  "saved_by": "v18670-1",
+  "scope": "helixon-fleet-agents"
+}

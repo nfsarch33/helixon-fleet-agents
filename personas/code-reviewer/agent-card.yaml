@@ -26,6 +26,8 @@ persona:
       - vendor_risk_flag
       - coverage_below_70
   budget_usd_per_day: 5.00
+  tenant_id: shared-fleet
+  tenant_isolation: per-persona-context
 skills:
   bundle: skills/code-reviewer/
   required:

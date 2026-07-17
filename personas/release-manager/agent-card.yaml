@@ -18,6 +18,8 @@ persona:
       - adr_required
       - cross_repo_change
   budget_usd_per_day: 3.00
+  tenant_id: shared-fleet
+  tenant_isolation: per-persona-context
 skills:
   bundle: skills/release-manager/
   required:

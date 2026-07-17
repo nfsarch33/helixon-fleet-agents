@@ -1,0 +1,44 @@
+name: Persona Healthz
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'personas/**'
+      - 'tests/test_healthz.py'
+      - '.github/workflows/persona-healthz.yml'
+  pull_request:
+    branches: [main]
+
+jobs:
+  healthz:
+    name: Persona Health Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run persona healthz probe
+        run: python3 tests/test_healthz.py
+
+      - name: Emit Prometheus textfile
+        if: always()
+        run: |
+          python3 tests/test_healthz.py > /tmp/persona-healthz.txt 2>/dev/null || true
+          cat /tmp/persona-healthz.txt || true
+          echo "---"
+          echo "OK: emitted $(wc -l < /tmp/persona-healthz.txt) metric lines"
+
+      - name: Upload healthz artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: persona-healthz-ndjson
+          path: /tmp/persona-healthz.txt
+          if-no-files-found: ignore
+          retention-days: 14

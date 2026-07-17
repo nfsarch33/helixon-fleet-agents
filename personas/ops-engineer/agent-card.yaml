@@ -16,6 +16,8 @@ persona:
       - runbook_missing
       - paging_active
   budget_usd_per_day: 4.00
+  tenant_id: shared-fleet
+  tenant_isolation: per-persona-context
 skills:
   bundle: skills/ops-engineer/
   required:
