@@ -1,10 +1,11 @@
 // fleet-orchestrator (v14516 MVP) — load + validate persona agent-cards.
 //
 // Subcommands:
-//   list               — print a table of persona id / tier / budget / owner
-//   validate <dir>     — validate every agent-card.yaml under dir
-//   card <id>          — print the parsed card for one persona
-//   schema             — print the agent-card schema (schema_version 1)
+//
+//	list               — print a table of persona id / tier / budget / owner
+//	validate <dir>     — validate every agent-card.yaml under dir
+//	card <id>          — print the parsed card for one persona
+//	schema             — print the agent-card schema (schema_version 1)
 //
 // Source of truth: docs/persona-schema.md (v14517) and the agent-card.yaml
 // files in this repo.
@@ -25,18 +26,23 @@ import (
 const schemaVersion = 1
 
 type Persona struct {
-	ID            string   `yaml:"id"`
-	DisplayName   string   `yaml:"display_name"`
-	Description   string   `yaml:"description"`
-	Owner         string   `yaml:"owner"`
-	HomeRepo      string   `yaml:"home_repo"`
-	ReviewsRepos  []string `yaml:"reviews_repos"`
-	DefaultTier   int      `yaml:"default_tier"`
-	BudgetUSDDay  float64  `yaml:"budget_usd_per_day"`
+	ID           string   `yaml:"id"`
+	DisplayName  string   `yaml:"display_name"`
+	Description  string   `yaml:"description"`
+	Owner        string   `yaml:"owner"`
+	HomeRepo     string   `yaml:"home_repo"`
+	ReviewsRepos []string `yaml:"reviews_repos"`
+	DefaultTier  int      `yaml:"default_tier"`
+	BudgetUSDDay float64  `yaml:"budget_usd_per_day"`
+	// TenantID + TenantIsolation (v18675-4, CF-172 sibling) attribute a
+	// persona to a tenant. Default value "shared-fleet" matches the
+	// existing fleet deployments.
+	TenantID        string `yaml:"tenant_id"`
+	TenantIsolation string `yaml:"tenant_isolation"`
 }
 
 type Skills struct {
-	Bundle  string   `yaml:"bundle"`
+	Bundle   string   `yaml:"bundle"`
 	Required []string `yaml:"required"`
 }
 
@@ -46,11 +52,11 @@ type Hooks struct {
 }
 
 type AgentCard struct {
-	SchemaVersion int      `yaml:"schema_version"`
-	Persona       Persona  `yaml:"persona"`
-	Skills        Skills   `yaml:"skills"`
-	Hooks         Hooks    `yaml:"hooks"`
-	PairLock      string   `yaml:"pair_lock"`
+	SchemaVersion int     `yaml:"schema_version"`
+	Persona       Persona `yaml:"persona"`
+	Skills        Skills  `yaml:"skills"`
+	Hooks         Hooks   `yaml:"hooks"`
+	PairLock      string  `yaml:"pair_lock"`
 }
 
 // LoadCard parses one agent-card.yaml.
@@ -110,12 +116,16 @@ func cmdList(w io.Writer, dir string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(w, "%-20s %-30s %-5s %-8s %s\n", "PERSONA_ID", "DISPLAY_NAME", "TIER", "BUDGET", "OWNER")
-	fmt.Fprintln(w, strings.Repeat("-", 80))
+	fmt.Fprintf(w, "%-20s %-30s %-5s %-8s %-15s %s\n", "PERSONA_ID", "DISPLAY_NAME", "TIER", "BUDGET", "OWNER", "TENANT")
+	fmt.Fprintln(w, strings.Repeat("-", 100))
 	for _, c := range cards {
-		fmt.Fprintf(w, "%-20s %-30s %-5d $%-7.2f %s\n",
+		tenant := c.Persona.TenantID
+		if tenant == "" {
+			tenant = "default"
+		}
+		fmt.Fprintf(w, "%-20s %-30s %-5d $%-7.2f %-15s %s\n",
 			c.Persona.ID, c.Persona.DisplayName,
-			c.Persona.DefaultTier, c.Persona.BudgetUSDDay, c.Persona.Owner)
+			c.Persona.DefaultTier, c.Persona.BudgetUSDDay, c.Persona.Owner, tenant)
 	}
 	return nil
 }
@@ -126,8 +136,12 @@ func cmdValidate(w io.Writer, dir string) error {
 		return err
 	}
 	for _, c := range cards {
-		fmt.Fprintf(w, "OK   %s  (schema=%d, tier=%d, budget=$%.2f)\n",
-			c.Persona.ID, c.SchemaVersion, c.Persona.DefaultTier, c.Persona.BudgetUSDDay)
+		tenant := c.Persona.TenantID
+		if tenant == "" {
+			tenant = "default"
+		}
+		fmt.Fprintf(w, "OK   %s  (schema=%d, tier=%d, budget=$%.2f, tenant=%s)\n",
+			c.Persona.ID, c.SchemaVersion, c.Persona.DefaultTier, c.Persona.BudgetUSDDay, tenant)
 	}
 	fmt.Fprintf(w, "\n%d persona(s) valid.\n", len(cards))
 	return nil
@@ -159,6 +173,8 @@ func cmdSchema(w io.Writer) {
 	fmt.Fprintln(w, "  reviews_repos: []string")
 	fmt.Fprintln(w, "  default_tier: int  (0..3)")
 	fmt.Fprintln(w, "  budget_usd_per_day: float")
+	fmt.Fprintln(w, "  tenant_id: string  (v18675-4; default shared-fleet)")
+	fmt.Fprintln(w, "  tenant_isolation: enum  (v18675-4; per-persona-context|shared)")
 	fmt.Fprintln(w, "skills:")
 	fmt.Fprintln(w, "  bundle: path")
 	fmt.Fprintln(w, "  required: []string")
