@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Helixon fleet agent — beforeSubmitPrompt hook (v14517)
+# Helixon fleet agent — beforeSubmitPrompt hook (v14517 + v18675-4)
 #
 # Reads Cursor's beforeSubmitPrompt JSON from stdin, checks the
 # pair-lock, picks the right LLM cell, and emits a redirect Output.
@@ -11,6 +11,12 @@
 #   - calls `pair-lock check` before any decision; refuses with
 #     no_decision if a different pair is active.
 #   - emits `pair_id` + `pair_lock_ok` in the Output for audit trails.
+#
+# v18675-4 changes:
+#   - emits `tenant_id` (from pair-lock or HELIXON_TENANT_ID env var) in
+#     the Output for per-tenant attribution in the audit trail.
+#   - calls `pair-lock audit` after a successful decision so the
+#     fleet-trail NDJSON records who acted on what.
 set -euo pipefail
 
 PERSONA_ID="${HELIXON_AGENT_PERSONA:-code-reviewer}"
@@ -23,6 +29,7 @@ PAIR_ID="${HELIXON_SPRINT_ID:-unknown}"
 # Refuses if a DIFFERENT pair is active.
 pair_lock_ok="false"
 pair_id="$PAIR_ID"
+tenant_id="${HELIXON_TENANT_ID:-default}"
 active_pair=""
 active_phase=""
 
@@ -30,8 +37,13 @@ if command -v pair-lock >/dev/null 2>&1 && [ -f "$PAIR_LOCK_FILE" ]; then
     status_out="$(pair-lock status --file "$PAIR_LOCK_FILE" 2>/dev/null || true)"
     active_pair="$(echo "$status_out" | grep -oE '"pair_id": *"[^"]+"' | head -1 | sed -E 's/.*"([^"]+)"/\1/')"
     active_phase="$(echo "$status_out" | grep -oE '"phase": *"[^"]+"' | head -1 | sed -E 's/.*"([^"]+)"/\1/')"
+    active_tenant="$(echo "$status_out" | grep -oE '"tenant_id": *"[^"]+"' | head -1 | sed -E 's/.*"([^"]+)"/\1/')"
     if [ -z "$active_pair" ] || [ "$active_pair" = "$PAIR_ID" ] || [ "$active_phase" = "closed" ]; then
         pair_lock_ok="true"
+    fi
+    # Lock wins over env var when present and non-empty.
+    if [ -n "$active_tenant" ]; then
+        tenant_id="$active_tenant"
     fi
 fi
 
@@ -43,6 +55,7 @@ if [ "$pair_lock_ok" != "true" ]; then
   "hook_mode": "abstain",
   "reason": "pair-lock: active pair '$active_pair' (phase=$active_phase) does not match requested pair '$PAIR_ID'",
   "sprint_id": "$active_pair",
+  "tenant_id": "$tenant_id",
   "pair_lock_ok": false
 }
 EOF
@@ -71,7 +84,15 @@ if [[ -z "$cell_id" ]]; then
     cell_id="local-tier${TIER}"
 fi
 
-# 4. Emit Output JSON (Cursor reads stdout)
+# 4. Audit-trail emission (v18675-4). Best-effort: never block the
+#    decision on audit-log writes. The audit emit goes to stderr so it
+#    does not pollute the JSON Output Cursor reads from stdout.
+if command -v pair-lock >/dev/null 2>&1; then
+    pair-lock audit --action "beforeSubmitPrompt" --detail "$PERSONA_ID:$cell_id" \
+        >/dev/null 2>&1 || true
+fi
+
+# 5. Emit Output JSON (Cursor reads stdout)
 cat <<EOF
 {
   "persona_id": "$PERSONA_ID",
@@ -80,6 +101,7 @@ cat <<EOF
   "hook_mode": "redirect",
   "reason": "fleet-agent:${PERSONA_ID}",
   "sprint_id": "$pair_id",
+  "tenant_id": "$tenant_id",
   "pair_lock_ok": true
 }
 EOF
