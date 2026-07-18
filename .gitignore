@@ -2,3 +2,7 @@
 *.swp
 .DS_Store
 __pycache__/
+
+# Local build artifacts (Helixon fleet agent tools)
+tools/fleet-orchestrator/fleet-orchestrator
+tools/pair-lock/pair-lock
