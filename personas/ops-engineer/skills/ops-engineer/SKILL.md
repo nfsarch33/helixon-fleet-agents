@@ -41,6 +41,6 @@ fleet node + state in every action log entry.
 ## Failure modes
 
 - **SSH failure**: verify Tailscale first; check wsl.conf for
-  `mirror network`; never ssh from wsl1 to win1.
+  `mirror network`; never ssh from <test-host-1> to <host-b>.
 - **agentcage escape attempt**: rotate the cage key immediately;
   page sre.

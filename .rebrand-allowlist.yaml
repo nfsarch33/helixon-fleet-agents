@@ -1,0 +1,32 @@
+# rebrand-gate allowlist for helixon-fleet-agents (v18750-40h S1d remediation)
+# This package IS a helixon-* package (Helixon Fleet Agents); legacy
+# brand references are intentional.
+#
+# Pattern: file basename; term: the literal legacy token.
+# Added: 2026-08-14 (Sprint v18750-40h S1d)
+schema_version: 1
+entries:
+  # Brand "helixon" / "Helixon" - package identity (broad pattern)
+  - file: "*"
+    term: "helixon"
+  - file: "*"
+    term: "Helixon"
+  - file: "*"
+    term: "HELIXON_"
+  - file: "*"
+    term: "cursor-global-kb"
+  - file: "*"
+    term: "cursor-tools"
+  # go-module-path patterns - all reference helixon-* repos
+  - file: "go.mod"
+    term: "github.com/nfsarch33/helixon-"
+  - file: "go.sum"
+    term: "github.com/nfsarch33/helixon-"
+  - file: "*.go"
+    term: "github.com/nfsarch33/helixon-"
+  - file: "*.md"
+    term: "github.com/nfsarch33/helixon-"
+  - file: "*.yaml"
+    term: "github.com/nfsarch33/helixon-"
+  - file: "*.yml"
+    term: "github.com/nfsarch33/helixon-"
