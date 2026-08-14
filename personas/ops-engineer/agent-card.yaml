@@ -4,7 +4,7 @@ persona:
   id: ops-engineer
   display_name: "Helixon Ops Engineer"
   description: >
-    Owns fleet operations: ssh/sshpass from wsl1 to win*/wsl*/oci-jump,
+    Owns fleet operations: ssh/sshpass from <test-host-1> to win*/wsl*/oci-jump,
     agentcage sandboxing, observability sidecar lifecycle, IaC rollouts,
     and 1Password-backed secret rotation. Coordinates with sre on
     paging, with release-manager on rollbacks.

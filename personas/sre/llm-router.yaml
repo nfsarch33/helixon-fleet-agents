@@ -1,0 +1,62 @@
+# agent-card.yaml — schema-version 1
+# Auxiliary card: documents the SRE persona's dependency on the
+# llm-cluster-router service (nfsarch33/llm-cluster-router v1.0.0).
+# Loaded by the SRE skill bundle; not a standalone persona.
+schema_version: 1
+dependency:
+  id: llm-router
+  kind: external-service
+  service: llm-cluster-router
+  repo: nfsarch33/llm-cluster-router
+  version: v1.0.0
+  tag_sha: e1b96cd556d5840fdfedf82222fcc6a5fffb58ac
+  build_commit: c730e7dbaa52615d73b37fa22b0ef59201cfa3cd
+  release_url: https://github.com/nfsarch33/llm-cluster-router/releases/tag/v1.0.0
+  binary_path: ~/runs/llcr-v1.0.0
+  symlink: ~/bin/llcr
+  sha256: e46c33f802e5da3922610b2e3e0f1852f7afa8358edc531a08ab81e3dac0d285
+  cosign_bundle: ~/runs/llcr-v1.0.0.cosign.bundle
+  cosign_public_key: ~/runs/cosign.pub
+  sbom:
+    spdx: ~/runs/llcr-v1.0.0.spdx.json
+    cyclonedx: ~/runs/llcr-v1.0.0.cdx.json
+consumers:
+  - persona: sre
+    consumption_mode: metrics-scrape
+    endpoints:
+      - http://127.0.0.1:18090/metrics   # Prometheus
+      - http://127.0.0.1:18090/healthz   # cached liveness
+      - http://127.0.0.1:18090/healthz?live=1   # fresh probe (use for readiness)
+  - persona: ops-engineer
+    consumption_mode: healthcheck
+    endpoints:
+      - http://127.0.0.1:18090/healthz?live=1
+  - persona: release-manager
+    consumption_mode: rollout-gate
+    endpoints:
+      - http://127.0.0.1:18090/metrics
+upgrade_policy:
+  cadence: per-minor
+  follow_releases: https://github.com/nfsarch33/llm-cluster-router/releases
+  notes: >
+    v1.0.0 is the first 1.x release. Subsequent minor versions (1.1.x, 1.2.x)
+    are drop-in. Major version bumps (2.x) require an SRE acceptance runbook.
+    Always verify the cosign bundle against the public key before promoting
+    a new version to fleet nodes.
+security:
+  cve_status:
+    - id: CVE-2026-46600
+      status: fixed_in_v1.0.0
+      library: golang.org/x/net
+    - id: CVE-2026-56852
+      status: fixed_in_v1.0.0
+      library: golang.org/x/text
+  trivy_baseline:
+    high: 0
+    critical: 0
+flaky_tests_locked:
+  - test: TestRunCancelProbeSetsMaxTokens
+    contract: cursor-global-kb/regression-contracts/lcr-stale-health-flake.md
+references:
+  - cursor-global-kb/evidence/v18750-Q7/p1-lcr-hygiene.md
+  - cursor-global-kb/docs/adr/adr-0007-token-reseller-canonicalisation.md
