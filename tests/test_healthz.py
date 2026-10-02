@@ -2,7 +2,7 @@
 
 This script is invoked by:
 - GitHub Actions CI on every PR (validates persona files are loadable)
-- systemd timer on wsl1/wsl2 every 15 min (writes NDJSON to helixon-platform/observability/)
+- systemd timer on <test-host-1>/<test-host-2> every 15 min (writes NDJSON to helixon-platform/observability/)
 - Helixon agent SRE persona's health check routine
 
 It validates:

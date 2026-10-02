@@ -42,3 +42,19 @@ the metric directly before silencing).
 - **Alertmanager down**: fall back to manual polling every 60s;
   page ops-engineer.
 - **False page rate > 5%**: trigger SLO review with release-manager.
+
+## Dependencies (v18750-Q7)
+
+- **llm-cluster-router v1.0.0** (`nfsarch33/llm-cluster-router`): the SRE persona
+  consumes `?live=1` health probes and per-route latency histograms. Dependency
+  card: `personas/sre/llm-router.yaml` (PR #8). When LCR reports stale health
+  on a route, follow the regression contract `cursor-global-kb/regression-contracts/lcr-stale-health-flake.md`
+  before paging (the flake is observed and locked in; do not bypass the contract).
+
+- **runx wsl-windows-check** (`nfsarch33/runx`): the SRE persona uses this when
+  triaging "missing file" reports on wsl hosts — it distinguishes WSL ext4 vs
+  Windows drvfs visibility. Pattern codified as pat-052.
+
+- **runx git-push-retry** (`nfsarch33/runx`): used by SRE when emergency
+  rollback patches must land during an incident (bounded retry avoids flapping).
+  Pattern codified as pat-053.
